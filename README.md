@@ -21,6 +21,17 @@
 - `opentofu/cloud-init/server2/network-config.yaml` -> Configurar Gateway, DNS del equipo con MariaDB, y eliminar configuración de la red externa.
 - `opentofu/escenario.tf` -> Quitar interfaz `red-externa` del equipo MariaDB.
 
+## Usar el servidor web nginx en vez de apache2
+
+- `ansible/roles/nginx/tasks/main.yaml` -> Cambio de instalación y configuración de apache2 por nginx.
+- `ansible/roles/nginx/handlers/main.yaml` -> Cambio del reinicio de apache2 por nginx.
+- `ansible/roles/nginx/templates/etc/nginx/vhost.j2` -> Modificación del VirtualHost para adaptarlo al formato de nginx.
+- `ansible/group_vars/all` -> Eliminación del bloque de modulos que antes se activavan al usar apache2, pero que ya no son necesarios al usar nginx.
+- `ansible/hosts` -> Cambio del nombre del host, antes era apache2 y ahora nginx.
+- `ansible/site.yaml` -> Cambio del nombre del rol apache2 por nginx.
+- `opentofu/cloud-init/server1/user-data.yaml` -> Cambio del hostname de la máquina, antes era pi-apache2 y ahora pi-nginx
+- `opentofu/escenario.tf` -> Cambio de nombre del bloque que crea la máquina con el servidor web, y cambio de nombre de la máquina, antes pi-apache2 y ahora pi-nginx.
+
 # Pasos para hacer funcionar el escenario
 - Modificar los `opentofu/cloud-init/serverX/user-data.yaml` y añadir tu clave ssh pública
 - Modificar `opentofu/variables.tf` y añadir la ruta donde se encuentran las imagenes: **debian13-base.qcow2** y **ubuntu2404-base.qcow2**

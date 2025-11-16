@@ -1,0 +1,25 @@
+server {
+  listen 80;
+
+  root {{ item.datos.documentroot }};
+
+  index index.php;
+
+  server_name {{ item.datos.nameserver }};
+
+  location / {
+    try_files $uri $uri/ /index.php?$query_string;
+  }
+
+  location ~ \.php$ {
+    include snippets/fastcgi-php.conf;
+    fastcgi_pass 127.0.0.1:9000;
+  }
+
+  location ~ /\.ht {
+    deny all;
+  }
+
+  access_log /var/log/nginx/{{ item.datos.accesslog }}.log;
+  error_log /var/log/nginx/{{ item.datos.errorlog }}.log;
+}

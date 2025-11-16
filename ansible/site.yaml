@@ -1,7 +1,7 @@
 - hosts: servidores_web
   become: true
   roles:
-   - role: apache2
+   - role: nginx
    - role: iptables
 
 - hosts: servidores_bd
