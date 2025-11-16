@@ -29,12 +29,12 @@
 - `ansible/group_vars/all` -> Eliminación del bloque de modulos que antes se activavan al usar apache2, pero que ya no son necesarios al usar nginx.
 - `ansible/hosts` -> Cambio del nombre del host, antes era apache2 y ahora nginx.
 - `ansible/site.yaml` -> Cambio del nombre del rol apache2 por nginx.
-- `opentofu/cloud-init/server1/user-data.yaml` -> Cambio del hostname de la máquina, antes era pi-apache2 y ahora pi-nginx
+- `opentofu/cloud-init/server1/user-data.yaml` -> Cambio del hostname de la máquina, antes era pi-apache2 y ahora pi-nginx.
 - `opentofu/escenario.tf` -> Cambio de nombre del bloque que crea la máquina con el servidor web, y cambio de nombre de la máquina, antes pi-apache2 y ahora pi-nginx.
 
 # Pasos para hacer funcionar el escenario
-- Modificar los `opentofu/cloud-init/serverX/user-data.yaml` y añadir tu clave ssh pública
-- Modificar `opentofu/variables.tf` y añadir la ruta donde se encuentran las imagenes: **debian13-base.qcow2** y **ubuntu2404-base.qcow2**
-- Modificar `ansible/hosts` para añadir la ruta de tu clave ssh privada
-- Ejecutar dentro de la carpeta `opentofu/` los comandos `tofu init` y `tofu apply`
-- Ejecutar dentro de la carpeta `ansible/` el comando `ansible-playbook site.yaml`
+- Modificar los `opentofu/cloud-init/serverX/user-data.yaml` y añadir tu clave ssh pública.
+- Modificar `opentofu/variables.tf` y añadir la ruta donde se encuentran las imagenes: **debian13-base.qcow2** y **ubuntu2404-base.qcow2**.
+- Modificar `ansible/hosts` para añadir la ruta de tu clave ssh privada.
+- Ejecutar dentro de la carpeta `opentofu/` los comandos `tofu init` y `tofu apply`.
+- Ejecutar dentro de la carpeta `ansible/` el comando `ansible-playbook site.yaml`.
