@@ -17,7 +17,7 @@
 - `ansible/roles/iptables/files/rules.v4` -> Reglas iptables.
 - `ansible/roles/iptables/handlers/main.yaml` -> Configuración de los restart del sysctl e iptables.
 - `ansible/roles/iptables/tasks/main.yaml` -> Instalación y configuración iptables y bit de fowarding.
-- `ansible/site.yaml` -> Para añadir a los hosts servidores_web el rol de iptables.
+- `ansible/site.yaml` -> Para añadir a los hosts servidores_web el rol de iptables y cambio en el orden ya que si se actualiza el equipo MariaDB antes de hacer el SNAT no tendrá conexión.
 - `opentofu/cloud-init/server2/network-config.yaml` -> Configurar Gateway, DNS del equipo con MariaDB, y eliminar configuración de la red externa.
 - `opentofu/escenario.tf` -> Quitar interfaz `red-externa` del equipo MariaDB.
 
