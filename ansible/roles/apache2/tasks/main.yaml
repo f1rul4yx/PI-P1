@@ -1,9 +1,8 @@
-- name: Instalar paquetes necesarios para LAMP (Apache, PHP)
+- name: Instalar paquetes necesarios para LAMP (Apache, PHP-FPM)
   apt:
     name:
       - apache2
-      - php
-      - libapache2-mod-php
+      - php-fpm
       - php-mysql
       - php-mbstring
       - git
@@ -63,4 +62,11 @@
     dest: "/{{ base_web_path }}/config.php"
     owner: www-data
     group: www-data
-    
+
+- name: Configurar PHP-FPM para escuchar en todas las interfaces
+  ansible.builtin.lineinfile:
+    path: /etc/php/8.4/fpm/pool.d/www.conf
+    regexp: 'listen = /run/php/'
+    line: 'listen = 9000'
+    state: present
+  notify: restart php-fpm

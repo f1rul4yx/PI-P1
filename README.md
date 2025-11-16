@@ -2,9 +2,14 @@
 
 ## Cambio del ServerName
 
-Los ficheros modificados para lograr el cambio son:
+- `ansible/group_vars/all` -> Para cambiar las variables.
 
-- ansible/group_vars/all
+## PHP-FPM para ejecutar código PHP
+
+- `ansible/group_vars/all` -> Para añadir los módulos que tiene que cargar apache2.
+- `ansible/roles/apache2/tasks/main.yaml` -> Para añadir la instalación y configuración de php-fpm.
+- `ansible/roles/apache2/handlers/main.yaml` -> Para añadir el reinicio del servicio php-fpm.
+- `ansible/roles/apache2/templates/etc/apache2/vhost.j2` -> Para añadir la configuración `ProxyPassMatch` en el VirtualHost.
 
 # Pasos para hacer funcionar el escenario
 - Modificar los `opentofu/cloud-init/serverX/user-data.yaml` y añadir tu clave ssh pública

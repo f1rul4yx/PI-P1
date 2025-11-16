@@ -3,6 +3,8 @@
 	ServerAdmin webmaster@localhost
 	DocumentRoot {{item.datos.documentroot}}
 
+  ProxyPassMatch ^/(.*\.php)$ fcgi://127.0.0.1:9000/var/www/guestbook/$1
+
 	<Directory {{ item.datos.documentroot }}>
         Options Indexes FollowSymLinks
         AllowOverride All
