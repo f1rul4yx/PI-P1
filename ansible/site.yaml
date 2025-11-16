@@ -7,6 +7,7 @@
   become: true
   roles:
    - role: apache2
+   - role: iptables
 
 - hosts: servidores_bd
   become: true

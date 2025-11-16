@@ -1,0 +1,19 @@
+- name: Instalar iptables
+  apt:
+    pkg:
+      - iptables
+      - iptables-persistent
+    state: latest
+    update_cache: yes
+
+- name: Copiar las reglas
+  ansible.builtin.copy:
+    src: rules.v4
+    dest: /etc/iptables/rules.v4
+  notify: restart iptables
+
+- name: Habilitar IP Forwarding
+  ansible.builtin.copy:
+    src: 99-forward.conf
+    dest: /etc/sysctl.d/99-forward.conf
+  notify: restart sysctl

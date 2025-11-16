@@ -11,6 +11,16 @@
 - `ansible/roles/apache2/handlers/main.yaml` -> Para añadir el reinicio del servicio php-fpm.
 - `ansible/roles/apache2/templates/etc/apache2/vhost.j2` -> Para añadir la configuración `ProxyPassMatch` en el VirtualHost.
 
+## Servidor Web de Router/NAT y quitar al equipo MariaDB de la red externa
+
+- `ansible/roles/iptables/files/99-forward.conf` -> Configuración bit de forwarding.
+- `ansible/roles/iptables/files/rules.v4` -> Reglas iptables.
+- `ansible/roles/iptables/handlers/main.yaml` -> Configuración de los restart del sysctl e iptables.
+- `ansible/roles/iptables/tasks/main.yaml` -> Instalación y configuración iptables y bit de fowarding.
+- `ansible/site.yaml` -> Para añadir a los hosts servidores_web el rol de iptables.
+- `opentofu/cloud-init/server2/network-config.yaml` -> Configurar Gateway, DNS del equipo con MariaDB, y eliminar configuración de la red externa.
+- `opentofu/escenario.tf` -> Quitar interfaz `red-externa` del equipo MariaDB.
+
 # Pasos para hacer funcionar el escenario
 - Modificar los `opentofu/cloud-init/serverX/user-data.yaml` y añadir tu clave ssh pública
 - Modificar `opentofu/variables.tf` y añadir la ruta donde se encuentran las imagenes: **debian13-base.qcow2** y **ubuntu2404-base.qcow2**
