@@ -22,3 +22,10 @@ guestbook_db_host: "mariadb.diego.org"
 guestbook_db_user: "admin"
 guestbook_db_password: "clave12345"
 guestbook_db_name: "guestbook"
+
+# Variables de Juego
+game_name: "game"
+game_nameserver: "game.diego.org"
+game_documentroot: "/var/www/game"
+game_errorlog: "error_game"
+game_accesslog: "acceses_game"

@@ -1,0 +1,32 @@
+- name: Configuración de virtualhost
+  template: 
+    src: etc/nginx/vhost.j2
+    dest: /etc/nginx/sites-available/{{game_name}}
+    owner: root
+    group: root
+
+- name: Crear DocumentRoot si no existe
+  ansible.builtin.file:
+    path: /{{game_documentroot}}
+    state: directory
+    owner: www-data
+    group: www-data
+    mode: '0755'
+
+
+- name: Activación de los VirtualHost
+  file:
+    src: /etc/nginx/sites-available/{{game_name}}
+    dest: /etc/nginx/sites-enabled/{{game_name}}
+    state: link
+  notify: restart nginx
+
+
+- name: Copiar Juego
+  ansible.builtin.copy:
+    src: app/
+    dest: "/{{ game_documentroot }}/"
+    owner: www-data
+    group: www-data
+    mode: '0644'
+    directory_mode: '0755'

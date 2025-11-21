@@ -1,0 +1,11 @@
+server {
+  listen 80;
+  root {{ game_documentroot }};
+  index index.html;
+  server_name {{ game_nameserver }};
+  location / {
+    try_files $uri $uri/ =404;
+  }
+  access_log /var/log/nginx/{{ game_accesslog }}.log;
+  error_log /var/log/nginx/{{ game_errorlog }}.log;
+}

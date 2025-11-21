@@ -1,0 +1,588 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Atrapa las estrellas</title>
+<style>
+  :root{
+    --bg:#0b1220;
+    --panel:#0f1724cc;
+    --accent:#ffd166;
+    --muted:#aab3c5;
+    --danger:#ff6b6b;
+    --glass: rgba(255,255,255,0.04);
+    --shadow: 0 6px 18px rgba(2,6,23,0.6);
+    --radius:12px;
+    font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0;background:linear-gradient(180deg,#081025 0%, #071025 60%); color:#fff}
+  .wrapper{
+    min-height:100vh; display:flex; align-items:center; justify-content:center; padding:28px;
+  }
+
+  .game-card{
+    width:100%; max-width:960px; background:var(--panel); border-radius:var(--radius); padding:18px; box-shadow:var(--shadow);
+    display:grid; grid-template-columns: 1fr 340px; gap:18px;
+  }
+
+  /* Left: canvas area */
+  .stage{
+    background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+    border-radius:10px; padding:12px; display:flex; flex-direction:column; align-items:center;
+  }
+  canvas{
+    display:block; width:100%; max-width:100%; height:auto; border-radius:8px; background: linear-gradient(180deg,#071225, #021018);
+    box-shadow: 0 6px 18px rgba(0,0,0,0.6) inset;
+  }
+
+  /* Right: controls + score */
+  .sidebar{
+    padding:12px; border-radius:8px; background: linear-gradient(180deg, rgba(255,255,255,0.02), transparent);
+    display:flex; flex-direction:column; gap:12px;
+  }
+
+  h1{font-size:18px;margin:0 0 6px 0}
+  .meta{color:var(--muted); font-size:13px; margin-bottom:6px}
+
+  .stats{
+    display:flex; gap:8px; flex-wrap:wrap;
+  }
+  .stat{
+    flex:1 1 48%; background:var(--glass); padding:10px; border-radius:8px; text-align:center;
+  }
+  .stat strong{display:block; font-size:20px; color:var(--accent)}
+  .controls{
+    display:flex; gap:8px; flex-direction:column;
+  }
+  button, .btn{
+    display:inline-flex; align-items:center; justify-content:center; gap:8px;
+    padding:10px 12px; border-radius:8px; border:0; background:linear-gradient(180deg,#16233a,#0f2438);
+    color:#fff; cursor:pointer; font-weight:600;
+  }
+  button.primary{background:linear-gradient(180deg,#ffb86b,#ff9f3b); color:#081225}
+  button.ghost{background:transparent; border:1px solid rgba(255,255,255,0.04)}
+  .muted{color:var(--muted); font-size:13px}
+
+  .legend{font-size:13px; color:var(--muted); padding:8px; background:rgba(255,255,255,0.02); border-radius:8px}
+
+  .touch-controls{
+    display:flex; gap:8px; justify-content:center; align-items:center; margin-top:6px;
+  }
+  .touch-controls .btn{flex:1; padding:12px 14px}
+
+  footer.note{color:var(--muted); font-size:12px; margin-top:auto; text-align:center}
+
+  /* mobile layout */
+  @media (max-width:880px){
+    .game-card{grid-template-columns:1fr; max-width:640px}
+    .sidebar{order:2}
+    .stage{order:1}
+  }
+</style>
+</head>
+<body>
+<div class="wrapper">
+  <div class="game-card" role="application" aria-label="Juego Atrapa las estrellas">
+    <div class="stage">
+      <div style="width:100%; display:flex; align-items:center; justify-content:space-between; margin-bottom:8px">
+        <div>
+          <h1>Atrapa las estrellas ⭐</h1>
+          <div class="meta">Mueve la canasta y atrapa estrellas para sumar puntos. Evita las bombas.</div>
+        </div>
+        <div class="muted">Teclado: ← →  | Toque: botones abajo</div>
+      </div>
+      <canvas id="gameCanvas" width="720" height="480" aria-label="Área de juego"></canvas>
+      <div style="width:100%; display:flex; justify-content:center; gap:8px; margin-top:8px;">
+        <button class="btn ghost" id="pauseBtn" aria-pressed="false">Pausar</button>
+        <button class="btn primary" id="restartBtn">Reiniciar</button>
+      </div>
+    </div>
+
+    <aside class="sidebar" aria-hidden="false">
+      <div class="stats" role="status" aria-live="polite">
+        <div class="stat">
+          Puntos <strong id="score">0</strong>
+          <div class="muted">Nivel <span id="level">1</span></div>
+        </div>
+        <div class="stat">
+          Vidas <strong id="lives">3</strong>
+          <div class="muted">Mejor: <span id="best">0</span></div>
+        </div>
+      </div>
+
+      <div class="legend">
+        <strong>Objetos</strong>
+        <div style="margin-top:6px; display:flex; gap:8px; flex-wrap:wrap;">
+          <div style="display:flex; gap:6px; align-items:center"><div style="width:18px;height:18px;background:linear-gradient(180deg,#fff5b1,#ffd166);border-radius:6px;box-shadow:0 2px 6px rgba(0,0,0,0.3)"></div> Estrella +10</div>
+          <div style="display:flex; gap:6px; align-items:center"><div style="width:18px;height:18px;background:linear-gradient(180deg,#b5d9ff,#7fbfff);border-radius:6px;box-shadow:0 2px 6px rgba(0,0,0,0.3)"></div> Super estrella +30</div>
+          <div style="display:flex; gap:6px; align-items:center"><div style="width:18px;height:18px;background:linear-gradient(180deg,#ff9f9f,#ff6b6b);border-radius:6px;box-shadow:0 2px 6px rgba(0,0,0,0.3)"></div> Bomba -1 vida</div>
+        </div>
+      </div>
+
+      <div style="display:flex; gap:8px; flex-direction:column;">
+        <div class="controls">
+          <label class="muted">Velocidad inicial</label>
+          <input id="speedRange" type="range" min="1" max="6" value="2" />
+        </div>
+
+        <div>
+          <label class="muted">Controles táctiles</label>
+          <div class="touch-controls" role="group" aria-label="Controles táctiles">
+            <button class="btn" id="leftBtn">◀</button>
+            <button class="btn" id="rightBtn">▶</button>
+          </div>
+        </div>
+
+        <div style="display:flex; gap:8px;">
+          <button class="btn ghost" id="muteBtn">Silenciar</button>
+          <button class="btn ghost" id="saveBtn">Guardar récord</button>
+        </div>
+      </div>
+
+      <footer class="note">Hecho con ❤️ — Puedes modificar el código para añadir niveles o efectos.</footer>
+    </aside>
+  </div>
+</div>
+
+<script>
+/* -------------------------------
+   Atrapa las estrellas - JavaScript
+   Comentarios en español. Código escrito y organizado
+   para claridad y fácil modificación.
+   ------------------------------- */
+
+(() => {
+  // Canvas + contexto
+  const canvas = document.getElementById('gameCanvas');
+  const ctx = canvas.getContext('2d');
+
+  // UI
+  const scoreEl = document.getElementById('score');
+  const levelEl = document.getElementById('level');
+  const livesEl = document.getElementById('lives');
+  const bestEl = document.getElementById('best');
+  const pauseBtn = document.getElementById('pauseBtn');
+  const restartBtn = document.getElementById('restartBtn');
+  const speedRange = document.getElementById('speedRange');
+  const leftBtn = document.getElementById('leftBtn');
+  const rightBtn = document.getElementById('rightBtn');
+  const muteBtn = document.getElementById('muteBtn');
+  const saveBtn = document.getElementById('saveBtn');
+
+  // State
+  let score = 0;
+  let level = 1;
+  let lives = 3;
+  let best = parseInt(localStorage.getItem('atrapa_best') || '0', 10);
+  bestEl.textContent = best;
+  let paused = false;
+  let lastTime = 0;
+  let spawnTimer = 0;
+  let spawnInterval = 1200; // ms
+  let objects = [];
+  let gameSpeed = parseFloat(speedRange.value); // base difficulty multiplier
+  let muted = false;
+
+  // Player (canasta)
+  const player = {
+    x: canvas.width / 2,
+    y: canvas.height - 40,
+    w: 120,
+    h: 28,
+    speed: 700, // px/s
+    vx: 0,
+    color: '#ffd166'
+  };
+
+  // Input
+  const keys = { left: false, right: false };
+  let touchLeft = false, touchRight = false;
+
+  // Audio (Web Audio simple)
+  const AudioContext = window.AudioContext || window.webkitAudioContext;
+  const audioCtx = AudioContext ? new AudioContext() : null;
+  function playTone(freq=440, duration=0.08, type='sine', gain=0.08) {
+    if (!audioCtx || muted) return;
+    try {
+      const o = audioCtx.createOscillator();
+      const g = audioCtx.createGain();
+      o.type = type;
+      o.frequency.setValueAtTime(freq, audioCtx.currentTime);
+      g.gain.setValueAtTime(gain, audioCtx.currentTime);
+      o.connect(g); g.connect(audioCtx.destination);
+      o.start();
+      o.stop(audioCtx.currentTime + duration);
+    } catch(e){ /* no-op */ }
+  }
+
+  // Helpers: Rand
+  const rand = (a,b) => Math.random()*(b-a)+a;
+
+  // Object types
+  function spawnObject() {
+    // types: star, super, bomb
+    const r = Math.random();
+    let type = 'star';
+    if (r > 0.9) type = 'bomb';
+    else if (r > 0.8) type = 'super';
+    const size = type === 'super' ? rand(22,32) : type === 'bomb' ? rand(18,28) : rand(12,18);
+    objects.push({
+      id: Math.random().toString(36).slice(2,9),
+      x: rand(size/2, canvas.width - size/2),
+      y: -size,
+      size,
+      vy: (rand(70,120) + gameSpeed*20 + level*8) / 100 * 100, // px/s base
+      type,
+      rot: rand(0,Math.PI*2),
+      rotSpeed: rand(-1,1)
+    });
+  }
+
+  // Resize canvas for crisp rendering while preserving layout
+  function resizeCanvas(){
+    const rect = canvas.getBoundingClientRect();
+    const ratio = window.devicePixelRatio || 1;
+    canvas.width = Math.max(480, Math.floor(rect.width * ratio));
+    canvas.height = Math.max(320, Math.floor(rect.height * ratio));
+    // adjust player position to new scale
+    player.y = canvas.height - 40 * ratio;
+    player.w = Math.max(60, Math.floor(120 * ratio));
+    player.h = Math.max(18, Math.floor(28 * ratio));
+  }
+  window.addEventListener('resize', resizeCanvas);
+  resizeCanvas();
+
+  // Draw functions
+  function drawRoundedRect(ctx,x,y,w,h,r){
+    ctx.beginPath();
+    ctx.moveTo(x+r,y);
+    ctx.arcTo(x+w,y,x+w,y+h,r);
+    ctx.arcTo(x+w,y+h,x,y+h,r);
+    ctx.arcTo(x,y+h,x,y,r);
+    ctx.arcTo(x,y,x+w,y,r);
+    ctx.closePath();
+  }
+
+  function drawPlayer(ctx, p) {
+    ctx.save();
+    // basket body
+    ctx.fillStyle = player.color;
+    drawRoundedRect(ctx, p.x - p.w/2, p.y - p.h/2, p.w, p.h, 8);
+    ctx.fill();
+    // rim
+    ctx.fillStyle = '#0b1220';
+    ctx.fillRect(p.x - p.w/2 + 6, p.y - p.h/2 + 2, p.w - 12, 6);
+    // highlight
+    ctx.globalAlpha = 0.08;
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(p.x - p.w/2 + 8, p.y - p.h/2 + 4, p.w - 16, 4);
+    ctx.restore();
+  }
+
+  function drawStar(ctx, obj) {
+    ctx.save();
+    ctx.translate(obj.x, obj.y);
+    ctx.rotate(obj.rot);
+    const s = obj.size;
+    ctx.beginPath();
+    for (let i=0;i<5;i++){
+      ctx.lineTo( Math.cos((18+72*i)/180*Math.PI)*s, -Math.sin((18+72*i)/180*Math.PI)*s );
+      ctx.lineTo( Math.cos((54+72*i)/180*Math.PI)*s*0.5, -Math.sin((54+72*i)/180*Math.PI)*s*0.5 );
+    }
+    ctx.closePath();
+    if (obj.type === 'super') {
+      const g = ctx.createLinearGradient(0,-s,0,s);
+      g.addColorStop(0,'#fff5b1'); g.addColorStop(1,'#ffd166');
+      ctx.fillStyle = g;
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(0,0,0,0.15)';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    } else {
+      const g = ctx.createLinearGradient(0,-s,0,s);
+      g.addColorStop(0,'#ffffff'); g.addColorStop(1,'#ffe099');
+      ctx.fillStyle = g;
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(0,0,0,0.12)';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  function drawBomb(ctx,obj) {
+    ctx.save();
+    ctx.translate(obj.x, obj.y);
+    ctx.beginPath();
+    ctx.arc(0,0,obj.size/2,0,Math.PI*2);
+    ctx.fillStyle = '#ff8181';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(0,0,0,0.25)';
+    ctx.stroke();
+
+    // fuse
+    ctx.beginPath();
+    ctx.moveTo(obj.size/2*0.6, -obj.size/2*0.6);
+    ctx.lineTo(obj.size/2*1.6, -obj.size/2*1.6);
+    ctx.strokeStyle = '#ffd166';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+
+    ctx.restore();
+  }
+
+  function clear(){
+    // subtle background
+    const g = ctx.createLinearGradient(0,0,0,canvas.height);
+    g.addColorStop(0,'#071225'); g.addColorStop(1,'#021018');
+    ctx.fillStyle = g;
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+  }
+
+  // Collision detection (AABB vs circle)
+  function checkCatch(obj) {
+    const px = player.x;
+    const py = player.y;
+    const hw = player.w/2;
+    const hh = player.h/2;
+    // nearest point on rect to circle center
+    const nx = Math.max(px-hw, Math.min(obj.x, px+hw));
+    const ny = Math.max(py-hh, Math.min(obj.y, py+hh));
+    const dx = obj.x - nx, dy = obj.y - ny;
+    return (dx*dx + dy*dy) <= (obj.size/2)*(obj.size/2);
+  }
+
+  // Update loop
+  function update(delta) {
+    if (paused) return;
+    // move player
+    const dir = (keys.left || touchLeft) ? -1 : (keys.right || touchRight) ? 1 : 0;
+    player.vx = dir * player.speed * (1 + (gameSpeed-2)*0.08);
+    player.x += player.vx * (delta/1000);
+
+    // clamp
+    const half = player.w/2;
+    if (player.x < half) player.x = half;
+    if (player.x > canvas.width - half) player.x = canvas.width - half;
+
+    // spawn logic
+    spawnTimer += delta;
+    const effectiveInterval = Math.max(450, spawnInterval - level*60 - gameSpeed*80);
+    if (spawnTimer >= effectiveInterval) {
+      spawnTimer = 0;
+      spawnObject();
+    }
+
+    // update objects
+    for (let i = objects.length-1; i>=0; i--){
+      const o = objects[i];
+      o.y += o.vy * (delta/1000);
+      o.rot += o.rotSpeed * (delta/1000);
+
+      // catch?
+      if (checkCatch(o)) {
+        if (o.type === 'bomb') {
+          lives = Math.max(0, lives - 1);
+          playTone(120,0.18,'sawtooth',0.16);
+          // camera shake effect stub (visual feedback)
+          // remove
+          objects.splice(i,1);
+          if (lives <= 0) {
+            // game over
+            endGame();
+            return;
+          }
+        } else if (o.type === 'super') {
+          score += 30;
+          playTone(950,0.08,'triangle',0.06);
+          objects.splice(i,1);
+        } else {
+          score += 10;
+          playTone(880,0.06,'sine',0.05);
+          objects.splice(i,1);
+        }
+      } else if (o.y - o.size/2 > canvas.height + 50) {
+        // missed: if it's star, nothing; if super star missed, penalize slightly
+        if (o.type === 'super') score = Math.max(0, score - 5);
+        objects.splice(i,1);
+      }
+    }
+
+    // increase difficulty over time
+    if (score >= level * 150) {
+      level += 1;
+      playTone(1200,0.12,'sawtooth',0.12);
+    }
+
+    // update UI
+    scoreEl.textContent = score;
+    levelEl.textContent = level;
+    livesEl.textContent = lives;
+    bestEl.textContent = best;
+  }
+
+  // Render loop
+  function render() {
+    clear();
+    // draw falling objects
+    for (const o of objects) {
+      if (o.type === 'bomb') drawBomb(ctx,o);
+      else drawStar(ctx,o);
+    }
+    // draw player
+    drawPlayer(ctx, player);
+
+    // HUD
+    ctx.save();
+    ctx.font = '14px Inter, Arial';
+    ctx.fillStyle = 'rgba(255,255,255,0.06)';
+    ctx.fillRect(12,12,170,46);
+    ctx.fillStyle = '#fff';
+    ctx.fillText('Puntos: ' + score, 22, 34);
+    ctx.fillText('Vidas: ' + lives, 22, 52);
+    ctx.restore();
+  }
+
+  // Game loop (rAF)
+  function loop(ts) {
+    if (!lastTime) lastTime = ts;
+    const delta = ts - lastTime;
+    lastTime = ts;
+
+    update(delta);
+    render();
+    if (!paused) requestAnimationFrame(loop);
+  }
+
+  // Game over
+  function endGame() {
+    paused = true;
+    pauseBtn.textContent = 'Pausar';
+    pauseBtn.setAttribute('aria-pressed','false');
+    // update best
+    if (score > best) {
+      best = score;
+      localStorage.setItem('atrapa_best', String(best));
+      bestEl.textContent = best;
+    }
+    // show modal-like overlay on canvas
+    ctx.save();
+    ctx.fillStyle = 'rgba(2,6,12,0.6)';
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.fillStyle = '#fff';
+    ctx.textAlign = 'center';
+    ctx.font = 'bold 36px Inter, Arial';
+    ctx.fillText('¡Juego terminado!', canvas.width/2, canvas.height/2 - 10);
+    ctx.font = '20px Inter, Arial';
+    ctx.fillText('Puntuación final: ' + score, canvas.width/2, canvas.height/2 + 26);
+    ctx.font = '14px Inter, Arial';
+    ctx.fillText('Pulsa Reiniciar para volver a jugar', canvas.width/2, canvas.height/2 + 56);
+    ctx.restore();
+    playTone(160,0.5,'sawtooth',0.16);
+  }
+
+  // Start / Restart
+  function startGame() {
+    // reset variables
+    score = 0; level = 1; lives = 3;
+    objects = [];
+    paused = false;
+    lastTime = 0;
+    spawnTimer = 0;
+    gameSpeed = parseFloat(speedRange.value);
+    pauseBtn.textContent = 'Pausar';
+    pauseBtn.setAttribute('aria-pressed','false');
+    // position player center
+    player.x = canvas.width / 2;
+    // ensure audio resumes on user gesture (some browsers require)
+    if (audioCtx && audioCtx.state === 'suspended') {
+      audioCtx.resume().catch(()=>{/*ignore*/});
+    }
+    requestAnimationFrame(loop);
+  }
+
+  // Pause toggle
+  function togglePause() {
+    paused = !paused;
+    pauseBtn.textContent = paused ? 'Reanudar' : 'Pausar';
+    pauseBtn.setAttribute('aria-pressed', String(paused));
+    if (!paused) {
+      // restart loop
+      lastTime = 0;
+      requestAnimationFrame(loop);
+    }
+  }
+
+  // Event listeners
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowLeft' || e.key === 'a') keys.left = true;
+    if (e.key === 'ArrowRight' || e.key === 'd') keys.right = true;
+    if (e.key === ' ' || e.code === 'Space') {
+      e.preventDefault();
+      // quick pause/resume on space
+      togglePause();
+    }
+  });
+  window.addEventListener('keyup', (e) => {
+    if (e.key === 'ArrowLeft' || e.key === 'a') keys.left = false;
+    if (e.key === 'ArrowRight' || e.key === 'd') keys.right = false;
+  });
+
+  // Buttons
+  pauseBtn.addEventListener('click', () => {
+    // ensure audio context activated
+    if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+    togglePause();
+  });
+  restartBtn.addEventListener('click', () => {
+    // small visual feedback
+    if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+    startGame();
+  });
+
+  speedRange.addEventListener('input', (e) => {
+    gameSpeed = parseFloat(e.target.value);
+  });
+
+  // Touch controls
+  leftBtn.addEventListener('pointerdown', () => touchLeft = true);
+  leftBtn.addEventListener('pointerup', () => touchLeft = false);
+  leftBtn.addEventListener('pointerleave', () => touchLeft = false);
+  rightBtn.addEventListener('pointerdown', () => touchRight = true);
+  rightBtn.addEventListener('pointerup', () => touchRight = false);
+  rightBtn.addEventListener('pointerleave', () => touchRight = false);
+
+  // Mute / unmute
+  muteBtn.addEventListener('click', () => {
+    muted = !muted;
+    muteBtn.textContent = muted ? 'Sonido' : 'Silenciar';
+  });
+
+  // Save best explicitly
+  saveBtn.addEventListener('click', () => {
+    if (score > best) {
+      best = score;
+      localStorage.setItem('atrapa_best', String(best));
+      bestEl.textContent = best;
+      alert('¡Récord guardado! 🎉');
+    } else alert('No superaste el récord actual.');
+  });
+
+  // clicking canvas will resume audio on some browsers
+  canvas.addEventListener('pointerdown', () => {
+    if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+  });
+
+  // Start first game
+  startGame();
+
+  // Expose for debugging (opcional)
+  window.__game = { startGame, endGame, objects, player };
+})();
+</script>
+</body>
+</html>
+
+

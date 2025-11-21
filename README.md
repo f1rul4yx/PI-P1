@@ -32,9 +32,18 @@
 - `opentofu/cloud-init/server1/user-data.yaml` -> Cambio del hostname de la máquina, antes era pi-apache2 y ahora pi-nginx.
 - `opentofu/escenario.tf` -> Cambio de nombre del bloque que crea la máquina con el servidor web, y cambio de nombre de la máquina, antes pi-apache2 y ahora pi-nginx.
 
+## Añadir nueva página (game.diego.org)
+- `ansible/group_vars/all` -> Para añadir las variables del nuevo VirtualHost.
+- `ansible/site.yaml` -> Para añadir el nuevo rol al Servidor Web.
+- `ansible/roles/game/handlers/main.yaml` -> Para añadir el restart del servicio nginx.
+- `ansible/roles/game/tasks/main.yaml` -> Para añadir las tareas que debe realizar el rol de game para que la aplicación funcione.
+- `ansible/roles/game/files/app/index.html` -> Archivo principal de la aplicación, es el que ansible copiará en el documentroot.
+- `ansible/roles/game/templates/etc/nginx/vhost.j2` -> Plantilla para añadir al Servidor Web el Virtual Host, a partir de las variables configuradas anteriormente en `ansible/group_vars/all`.
+
 # Pasos para hacer funcionar el escenario
 - Modificar los `opentofu/cloud-init/serverX/user-data.yaml` y añadir tu clave ssh pública.
 - Modificar `opentofu/variables.tf` y añadir la ruta donde se encuentran las imagenes: **debian13-base.qcow2** y **ubuntu2404-base.qcow2**.
 - Modificar `ansible/hosts` para añadir la ruta de tu clave ssh privada.
 - Ejecutar dentro de la carpeta `opentofu/` los comandos `tofu init` y `tofu apply`.
 - Ejecutar dentro de la carpeta `ansible/` el comando `ansible-playbook site.yaml`.
+- Añadir en `/etc/hosts` las resoluciones `{ip_red_externa_servidor_web} guestbook.diego.org` y `{ip_red_externa_servidor_web} game.diego.org`.

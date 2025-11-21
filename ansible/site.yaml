@@ -2,6 +2,7 @@
   become: true
   roles:
    - role: nginx
+   - role: game
    - role: iptables
 
 - hosts: servidores_bd
